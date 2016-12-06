@@ -32,32 +32,57 @@
 #include <vector>
 #include <algorithm>
 #include <map>
+#include <deque>
+#include <iterator>
+
+namespace std {
+    std::ostream & operator<<(std::ostream & os, const std::pair<int,std::deque<int>> & dq) {
+        os << dq.first << " -> ";
+        std::copy(dq.second.begin(), dq.second.end(), std::ostream_iterator<int>(os, " "));
+        return os;
+    }
+}
 
 class solution {
   public:
     bool containNearbyAlmostDuplicates(const std::vector<int> & nums, int k, int t) {
-	std::map<int,int> dict;
+	std::map<int,std::deque<int>> dict;
 	int i, j;
-	for (i = 0, j = i; i < nums.size(); i++) {
-	    while (j-i <= k) {
-		dict[nums[j]] = j;
+	for (i = 0, j = i; i < nums.size();) {
+	    while (j < nums.size() && j-i <= k) {
+                if (j != i) {
+                    if (dict.find(nums[j]) == dict.end())
+                        dict[nums[j]] = std::deque<int>();
+                    dict[nums[j]].push_back(j);
+                }
 		j++;
 	    }
-	    auto it = dict.lower_bound(nums[i]-t);
-	    if (it != dict.end() && abs(it->first-nums[i]) <= t)
-		return true;
-	    dict.erase(nums[i]);
+            std::copy(dict.begin(), dict.end(),
+                      std::ostream_iterator<std::pair<int,std::deque<int>>>(std::cout, "\n"));
+            auto it = dict.lower_bound(nums[i]-t);
+            while (it != dict.end() && it->first > nums[i]+t)
+                ++it;
+            if (it != dict.end() && it->first <= nums[i]+t)
+                return true;
+            i++;
+            while (!dict[nums[i]].empty() && dict[nums[i]].front() <= i)
+                   dict[nums[i]].pop_front();
+            if (dict[nums[i]].empty())
+                dict.erase(nums[i]);
 	}
 	return false;
     }
 };
 
 int main() {
-    // std::vector<int> nums{1,2,4,5};
-    // int k = 2, t = 4;      // expected result = true
+    std::vector<int> nums{1,2,4,5};
+    int k = 2, t = 3;      // expected result = true
     
-    std::vector<int> nums{7,1,3};
-    int k = 2, t = 3;         // expected result = true
+    // std::vector<int> nums{7,1,3};
+    // int k = 2, t = 3;         // expected result = true
+
+    // std::vector<int> nums{3,6,0,4};
+    // int k = 2, t = 2;
     
     solution soln;
     bool exist = soln.containNearbyAlmostDuplicates(nums, k, t);
